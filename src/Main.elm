@@ -4,6 +4,8 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 
 
+-- JavaScriptのevalに渡す！！！
+
 
 -- MAIN
 
@@ -31,6 +33,7 @@ type alias Model =
   { displaynum : String
   , memorynum : String
   , memoryop : Operator
+  , first : Bool
   }
 
 
@@ -39,6 +42,7 @@ init =
   { displaynum = "0"
   , memorynum = "0"
   , memoryop = OpNone
+  , first = True
   }
 
 
@@ -69,11 +73,21 @@ update msg model =
       let
           str = String.fromInt int
       in
-          case model.displaynum of
-            "0" ->
-              { model | displaynum = str }
+          case model.memoryop of
+            OpNone ->
+              case model.displaynum of
+                "0" ->
+                  { model | displaynum = str }
+                _ ->
+                  { model | displaynum = model.displaynum ++ str }
+
             _ ->
-              { model | displaynum = model.displaynum ++ str }
+              if model.first then
+                { model | displaynum = str
+                        , first = False}
+              else
+                { model | displaynum = model.displaynum ++ str }
+
 
     ChangeSign ->
       model
@@ -106,6 +120,7 @@ update msg model =
       { model | displaynum = "0"
               , memorynum = "0"
               , memoryop = OpNone
+              , first = True
       }
 
     Enter ->
@@ -113,8 +128,11 @@ update msg model =
         OpAdd ->
           { model | displaynum =
                       String.fromFloat
-                        <| str2float model.memorynum + str2float model.memorynum
+                        <| str2float model.memorynum + str2float
+                        model.displaynum
                   , memorynum = "0"
+                  , memoryop = OpNone
+                  , first = True
           }
 
         OpSubtract ->
@@ -122,6 +140,8 @@ update msg model =
                       String.fromFloat
                         <| str2float model.memorynum - str2float model.displaynum
                   , memorynum = "0"
+                  , memoryop = OpNone
+                  , first = True
           }
 
         OpMultiply ->
@@ -129,6 +149,8 @@ update msg model =
                       String.fromFloat
                         <| str2float model.memorynum * str2float model.displaynum
                   , memorynum = "0"
+                  , memoryop = OpNone
+                  , first = True
           }
 
         OpDivide ->
@@ -140,6 +162,8 @@ update msg model =
                           String.fromFloat
                             <| str2float model.memorynum / str2float model.displaynum
                   , memorynum = "0"
+                  , memoryop = OpNone
+                  , first = True
           }
 
         OpNone ->
@@ -235,7 +259,11 @@ view model =
         []
         [ td [ colspan 2 ] [ createNumButton 0 ]
         , td [] [ button [ class "number" ] [ text "." ] ]
-        , td [] [ button [ class "operator" ] [ text "=" ] ]
+        , td [] [ button [ class "operator"
+                         , onClick Enter
+                         ]
+                         [ text "=" ]
+                ]
         ]
     ]
 
