@@ -68,28 +68,18 @@ update msg model =
       let
           str = String.fromInt int
       in
-          { model | displaynum = model.displaynum ++ str }
+          case model.displaynum of
+            "0" ->
+              { model | displaynum = str }
+            _ ->
+              { model | displaynum = model.displaynum ++ str }
 
     ChangeSign ->
-      { model | displaynum =
-                  case String.toFloat model.displaynum of
-                    Err errmsg ->
-                      "0"
-
-                    Ok num ->
-                      String.fromFloat -num
-      }
+      model
 
 
     Percent ->
-      { model | displaynum =
-                  case String.toFloat model.displaynum of
-                    Err err ->
-                      model.displaynum
-
-                    Ok num ->
-                      String.fromFloat (num/100.0)
-                      }
+      model
 
     Add ->
       { model | memorynum = model.displaynum
@@ -169,42 +159,47 @@ view model =
     [ tr
         []
         [ td [ colspan 3 ]
-             [ text "hello!" ]
+             [ text model.displaynum ]
         ]
     , tr
         []
-        [ td [] [ button [ class "other"
-                         , onClick ] [ text "C" ] ]
+        [ td [] [ button [ class "other" ] [ text "C" ] ]
         , td [] [ button [ class "other" ] [ text "+/-" ] ]
         , td [] [ button [ class "other" ] [ text "%" ] ]
         , td [] [ button [ class "operator" ] [ text "/" ] ]
         ]
     , tr
         []
-        [ td [] [ button [ class "number" ] [ text "7" ] ]
-        , td [] [ button [ class "number" ] [ text "8" ] ]
-        , td [] [ button [ class "number" ] [ text "9" ] ]
+        [ td [] [ createNumButton 7 ]
+        , td [] [ createNumButton 8 ]
+        , td [] [ createNumButton 9 ]
         , td [] [ button [ class "operator" ] [ text "x" ] ]
         ]
     , tr
         []
-        [ td [] [ button [ class "number" ] [ text "4" ] ]
-        , td [] [ button [ class "number" ] [ text "5" ] ]
-        , td [] [ button [ class "number" ] [ text "6" ] ]
+        [ td [] [ createNumButton 4 ]
+        , td [] [ createNumButton 5 ]
+        , td [] [ createNumButton 6 ]
         , td [] [ button [ class "operator" ] [ text "-" ] ]
         ]
     , tr
         []
-        [ td [] [ button [ class "number" ] [ text "1" ] ]
-        , td [] [ button [ class "number" ] [ text "2" ] ]
-        , td [] [ button [ class "number" ] [ text "3" ] ]
+        [ td [] [ createNumButton 1 ]
+        , td [] [ createNumButton 2 ]
+        , td [] [ createNumButton 3 ]
         , td [] [ button [ class "operator" ] [ text "+" ] ]
         ]
     , tr
         []
-        [ td [ colspan 2 ]
-             [ button [ class "number" ] [ text "0" ] ]
+        [ td [ colspan 2 ] [ createNumButton 0 ]
         , td [] [ button [ class "number" ] [ text "." ] ]
         , td [] [ button [ class "operator" ] [ text "=" ] ]
         ]
     ]
+
+createNumButton : Int -> Html Msg
+createNumButton int =
+  button [ class "number"
+         , onClick (Num int)
+         ]
+         [ text (String.fromInt int) ]
