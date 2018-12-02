@@ -56,6 +56,7 @@ type Msg
   | Multiply
   | Divide
   | Enter
+  | Clear
 
 
 update : Msg -> Model -> Model
@@ -99,6 +100,12 @@ update msg model =
     Divide ->
       { model | memorynum = model.displaynum
               , memoryop = OpDivide
+      }
+
+    Clear ->
+      { model | displaynum = "0"
+              , memorynum = "0"
+              , memoryop = OpNone
       }
 
     Enter ->
@@ -163,31 +170,66 @@ view model =
         ]
     , tr
         []
-        [ td [] [ button [ class "other" ] [ text "C" ] ]
-        , td [] [ button [ class "other" ] [ text "+/-" ] ]
-        , td [] [ button [ class "other" ] [ text "%" ] ]
-        , td [] [ button [ class "operator" ] [ text "/" ] ]
+        [ td []
+             [ button [ class "other"
+                      , onClick Clear
+                      ]
+                      [ text "C" ]
+             ]
+        , td []
+             [ button [ class "other"
+                      , onClick ChangeSign
+                      ]
+                      [ text "+/-" ]
+             ]
+        , td []
+             [ button [ class "other"
+                      , onClick Percent
+                      ]
+                      [ text "%" ]
+             ]
+        , td []
+             [ button [ class "operator"
+                      , onClick Divide
+                      ]
+                      [ text "/" ]
+             ]
         ]
     , tr
         []
         [ td [] [ createNumButton 7 ]
         , td [] [ createNumButton 8 ]
         , td [] [ createNumButton 9 ]
-        , td [] [ button [ class "operator" ] [ text "x" ] ]
+        , td []
+             [ button [ class "operator"
+                      , onClick Multiply
+                      ]
+                      [ text "x" ]
+             ]
         ]
     , tr
         []
         [ td [] [ createNumButton 4 ]
         , td [] [ createNumButton 5 ]
         , td [] [ createNumButton 6 ]
-        , td [] [ button [ class "operator" ] [ text "-" ] ]
+        , td []
+             [ button [ class "operator"
+                      , onClick Add
+                      ]
+                      [ text "+" ]
+             ]
         ]
     , tr
         []
         [ td [] [ createNumButton 1 ]
         , td [] [ createNumButton 2 ]
         , td [] [ createNumButton 3 ]
-        , td [] [ button [ class "operator" ] [ text "+" ] ]
+        , td []
+             [ button [ class "operator"
+                      , onClick Subtract
+                      ]
+                      [ text "-" ]
+             ]
         ]
     , tr
         []
