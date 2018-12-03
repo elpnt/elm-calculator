@@ -4,8 +4,6 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 
 
--- JavaScriptのevalに渡す！！！
-
 
 -- MAIN
 
@@ -21,28 +19,50 @@ main =
 
 -- MODEL
 
-type Operator
-  = OpAdd
-  | OpSubtract
-  | OpMultiply
-  | OpDivide
-  | OpNone
+
+type alias Calculator =
+  { add : Float -> Float -> Float
+  , sub : Float -> Float -> Float
+  , mul : Float -> Float -> Float
+  , div : Float -> Float -> Float
+  }
+
+
+calculator : Calculator
+calculator =
+  { add = (\x y -> x + y)
+  , sub = (\x y -> x - y)
+  , mul = (\x y -> x * y)
+  , div = (\x y -> x / y)
+  }
 
 
 type alias Model =
-  { displaynum : String
-  , memorynum : String
-  , memoryop : Operator
-  , first : Bool
+  { display : String
+  , function : Float -> Float -> Float
+  , lastValue : Float
+  , append : Bool
   }
 
 
 init : Model
 init =
-  { displaynum = "0"
-  , memorynum = "0"
-  , memoryop = OpNone
-  , first = True
+  { display = "0"
+  , function = (\x y -> y)
+  , lastValue = 0
+  , append = True
+  }
+
+parseFloat : String -> Float
+parseFloat input =
+  Maybe.withDefault 0 (String.toFloat input)
+
+
+operation : Model -> (Float -> Float -> Float) -> Model
+operation model function =
+  { model | function = function
+          , lastValue = (parseFloat model.display)
+          , append = False
   }
 
 
@@ -52,15 +72,17 @@ init =
 
 type Msg
   = NoOp
-  | Num Int
-  | ChangeSign
-  | Percent
+  | Clear
+  | Number Int
+  | Zero
+  | Decimal
   | Add
   | Subtract
   | Multiply
   | Divide
   | Enter
-  | Clear
+  | ChangeSign
+  | Percent
 
 
 update : Msg -> Model -> Model
@@ -69,207 +91,160 @@ update msg model =
     NoOp ->
       model
 
-    Num int ->
-      let
-          str = String.fromInt int
-      in
-          case model.memoryop of
-            OpNone ->
-              case model.displaynum of
-                "0" ->
-                  { model | displaynum = str }
-                _ ->
-                  { model | displaynum = model.displaynum ++ str }
+    Clear ->
+      init
 
-            _ ->
-              if model.first then
-                { model | displaynum = str
-                        , first = False}
-              else
-                { model | displaynum = model.displaynum ++ str }
+    Number int ->
+      updateDisplay model int
 
+    Decimal ->
+      decimal model
 
-    ChangeSign ->
-      model
-
-
-    Percent ->
-      model
+    Zero ->
+      zero model
 
     Add ->
-      { model | memorynum = model.displaynum
-              , memoryop = OpAdd
-      }
+      operation model calculator.add
 
     Subtract ->
-      { model | memorynum = model.displaynum
-              , memoryop = OpSubtract
-      }
+      operation model calculator.sub
 
     Multiply ->
-      { model | memorynum = model.displaynum
-              , memoryop = OpMultiply
-      }
+      operation model calculator.mul
 
     Divide ->
-      { model | memorynum = model.displaynum
-              , memoryop = OpDivide
-      }
-
-    Clear ->
-      { model | displaynum = "0"
-              , memorynum = "0"
-              , memoryop = OpNone
-              , first = True
-      }
+      operation model calculator.div
 
     Enter ->
-      case model.memoryop of
-        OpAdd ->
-          { model | displaynum =
-                      String.fromFloat
-                        <| str2float model.memorynum + str2float
-                        model.displaynum
-                  , memorynum = "0"
-                  , memoryop = OpNone
-                  , first = True
-          }
+      enter model
 
-        OpSubtract ->
-          { model | displaynum =
-                      String.fromFloat
-                        <| str2float model.memorynum - str2float model.displaynum
-                  , memorynum = "0"
-                  , memoryop = OpNone
-                  , first = True
-          }
+    ChangeSign ->
+      changesign model
 
-        OpMultiply ->
-          { model | displaynum =
-                      String.fromFloat
-                        <| str2float model.memorynum * str2float model.displaynum
-                  , memorynum = "0"
-                  , memoryop = OpNone
-                  , first = True
-          }
-
-        OpDivide ->
-          { model | displaynum =
-                      case str2int model.displaynum of
-                        0 ->
-                          "Error"
-                        _ ->
-                          String.fromFloat
-                            <| str2float model.memorynum / str2float model.displaynum
-                  , memorynum = "0"
-                  , memoryop = OpNone
-                  , first = True
-          }
-
-        OpNone ->
-          model
+    Percent ->
+      percent model
 
 
-str2float : String -> Float
-str2float str =
-  Maybe.withDefault 1 (String.toFloat str)
+updateDisplay : Model -> Int -> Model
+updateDisplay model int =
+  if model.display /= "0" && model.append then
+    { model | display = model.display ++ String.fromInt (int) }
+  else
+    { model | display = String.fromInt int
+            , append = True
+    }
 
 
-str2int : String -> Int
-str2int str =
-  Maybe.withDefault 1 (String.toInt str)
+zero : Model -> Model
+zero model =
+  if model.display == "0" || not model.append then
+    { model | display = "0"
+            , append = False
+    }
+  else
+    { model | display = model.display ++ "0" }
 
+
+decimal : Model -> Model
+decimal model =
+  if model.display /= "0" && model.append then
+    { model | display = appendDecimal model.display }
+  else
+    { model | display = "0"
+            , append = True
+    }
+
+
+appendDecimal : String -> String
+appendDecimal str =
+  if String.contains "." str then
+    str
+  else
+    str ++ "."
+
+
+enter : Model -> Model
+enter model =
+  if model.append then
+    { model | display = calculate model
+            , lastValue = parseFloat model.display
+            , append = False
+    }
+  else
+    { model | display = calculate model
+            , append = False
+    }
+
+
+calculate : Model -> String
+calculate model =
+  model.function model.lastValue (parseFloat model.display) |> String.fromFloat
+
+
+changesign : Model -> Model
+changesign model =
+  let
+    num = parseFloat model.display
+  in
+    { model | display = String.fromFloat (-num) }
+
+
+percent : Model -> Model
+percent model =
+  let
+    num = (parseFloat model.display) / 100.0
+  in
+    { model | display = String.fromFloat num }
 
 
 -- VIEW
+
+
+createButton : Msg -> String -> Html Msg
+createButton msg buttonText =
+  td []
+     [ button
+         [ onClick msg ]
+         [ text buttonText ]
+     ]
+
 
 view : Model -> Html Msg
 view model =
   table
     []
-    [ tr
-        []
-        [ td [ colspan 3 ]
-             [ text model.displaynum ]
-        ]
-    , tr
-        []
-        [ td []
-             [ button [ class "other"
-                      , onClick Clear
-                      ]
-                      [ text "C" ]
-             ]
-        , td []
-             [ button [ class "other"
-                      , onClick ChangeSign
-                      ]
-                      [ text "+/-" ]
-             ]
-        , td []
-             [ button [ class "other"
-                      , onClick Percent
-                      ]
-                      [ text "%" ]
-             ]
-        , td []
-             [ button [ class "operator"
-                      , onClick Divide
-                      ]
-                      [ text "/" ]
-             ]
-        ]
-    , tr
-        []
-        [ td [] [ createNumButton 7 ]
-        , td [] [ createNumButton 8 ]
-        , td [] [ createNumButton 9 ]
-        , td []
-             [ button [ class "operator"
-                      , onClick Multiply
-                      ]
-                      [ text "x" ]
-             ]
-        ]
-    , tr
-        []
-        [ td [] [ createNumButton 4 ]
-        , td [] [ createNumButton 5 ]
-        , td [] [ createNumButton 6 ]
-        , td []
-             [ button [ class "operator"
-                      , onClick Add
-                      ]
-                      [ text "+" ]
-             ]
-        ]
-    , tr
-        []
-        [ td [] [ createNumButton 1 ]
-        , td [] [ createNumButton 2 ]
-        , td [] [ createNumButton 3 ]
-        , td []
-             [ button [ class "operator"
-                      , onClick Subtract
-                      ]
-                      [ text "-" ]
-             ]
-        ]
-    , tr
-        []
-        [ td [ colspan 2 ] [ createNumButton 0 ]
-        , td [] [ button [ class "number" ] [ text "." ] ]
-        , td [] [ button [ class "operator"
-                         , onClick Enter
-                         ]
-                         [ text "=" ]
-                ]
-        ]
-    ]
-
-createNumButton : Int -> Html Msg
-createNumButton int =
-  button [ class "number"
-         , onClick (Num int)
+    [ tr []
+         [ td [ colspan 4 ]
+              [ text model.display ]
          ]
-         [ text (String.fromInt int) ]
+    , tr []
+         [ createButton Clear "C"
+         , createButton ChangeSign "+/-"
+         , createButton Percent "%"
+         , createButton Divide "/"
+         ]
+    , tr []
+         [ createButton (Number 7) "7"
+         , createButton (Number 8) "8"
+         , createButton (Number 9) "9"
+         , createButton Multiply "x"
+         ]
+    , tr []
+         [ createButton (Number 4) "4"
+         , createButton (Number 5) "5"
+         , createButton (Number 6) "6"
+         , createButton Subtract "-"
+         ]
+    , tr []
+         [ createButton (Number 1) "1"
+         , createButton (Number 2) "2"
+         , createButton (Number 3) "3"
+         , createButton Add "+"
+         ]
+    , tr []
+         [ td [ colspan 2 ]
+              [ button [ onClick Zero ] [ text "0" ] ]
+         , createButton Decimal "."
+         , createButton Enter "="
+         ]
+    ]
