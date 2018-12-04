@@ -172,9 +172,9 @@ calculate model =
 -- VIEW
 
 
-createButton : Msg -> String -> Html Msg
-createButton msg buttonText =
-  td []
+createButton : Msg -> String -> String -> Html Msg
+createButton msg className buttonText =
+  td [ class className ]
      [ button
          [ onClick msg ]
          [ text buttonText ]
@@ -186,37 +186,40 @@ view model =
   table
     []
     [ tr []
-         [ td [ colspan 4 ]
+         [ td [ colspan 4
+              , id "display"
+              ]
               [ text model.display ]
          ]
     , tr []
-         [ createButton Clear "C"
-         , createButton ChangeSign "+/-"
-         , createButton Percent "%"
-         , createButton Divide "/"
+         [ createButton Clear "other" "C"
+         , createButton ChangeSign "other" "+/-"
+         , createButton Percent "other" "%"
+         , createButton Divide "operator" "/"
          ]
     , tr []
-         [ createButton (Number 7) "7"
-         , createButton (Number 8) "8"
-         , createButton (Number 9) "9"
-         , createButton Multiply "x"
+         [ createButton (Number 7) "number" "7"
+         , createButton (Number 8) "number" "8"
+         , createButton (Number 9) "number" "9"
+         , createButton Multiply "operator" "x"
          ]
     , tr []
-         [ createButton (Number 4) "4"
-         , createButton (Number 5) "5"
-         , createButton (Number 6) "6"
-         , createButton Subtract "-"
+         [ createButton (Number 4) "number" "4"
+         , createButton (Number 5) "number" "5"
+         , createButton (Number 6) "number" "6"
+         , createButton Subtract "operator" "-"
          ]
     , tr []
-         [ createButton (Number 1) "1"
-         , createButton (Number 2) "2"
-         , createButton (Number 3) "3"
-         , createButton Add "+"
+         [ createButton (Number 1) "number" "1"
+         , createButton (Number 2) "number" "2"
+         , createButton (Number 3) "number" "3"
+         , createButton Add "operator" "+"
          ]
     , tr []
-         [ td [ colspan 2 ]
+         [ td [ colspan 2
+              , class "number"]
               [ button [ onClick Zero ] [ text "0" ] ]
-         , createButton Decimal "."
-         , createButton Enter "="
+         , createButton Decimal "number" "."
+         , createButton Enter "operator" "="
          ]
     ]
