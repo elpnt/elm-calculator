@@ -53,6 +53,7 @@ init =
   , append = True
   }
 
+
 parseFloat : String -> Float
 parseFloat input =
   Maybe.withDefault 0 (String.toFloat input)
@@ -95,13 +96,28 @@ update msg model =
       init
 
     Number int ->
-      updateDisplay model int
+      if model.display /= "0" && model.append then
+        { model | display = model.display ++ String.fromInt (int) }
+      else
+        { model | display = String.fromInt int
+                , append = True
+        }
 
     Decimal ->
-      decimal model
+      if model.display /= "0" && model.append then
+        { model | display = appendDecimal model.display }
+      else
+        { model | display = "0"
+                , append = True
+        }
 
     Zero ->
-      zero model
+      if model.display == "0" || not model.append then
+        { model | display = "0"
+                , append = False
+        }
+      else
+        { model | display = model.display ++ "0" }
 
     Add ->
       operation model calculator.add
@@ -116,43 +132,28 @@ update msg model =
       operation model calculator.div
 
     Enter ->
-      enter model
+      if model.append then
+        { model | display = calculate model
+                , lastValue = parseFloat model.display
+                , append = False
+        }
+      else
+        { model | display = calculate model
+                , append = False
+        }
 
     ChangeSign ->
-      changesign model
+      let
+        num = parseFloat model.display
+      in
+        { model | display = String.fromFloat (-num) }
 
     Percent ->
-      percent model
+      let
+        num = (parseFloat model.display) / 100.0
+      in
+        { model | display = String.fromFloat num }
 
-
-updateDisplay : Model -> Int -> Model
-updateDisplay model int =
-  if model.display /= "0" && model.append then
-    { model | display = model.display ++ String.fromInt (int) }
-  else
-    { model | display = String.fromInt int
-            , append = True
-    }
-
-
-zero : Model -> Model
-zero model =
-  if model.display == "0" || not model.append then
-    { model | display = "0"
-            , append = False
-    }
-  else
-    { model | display = model.display ++ "0" }
-
-
-decimal : Model -> Model
-decimal model =
-  if model.display /= "0" && model.append then
-    { model | display = appendDecimal model.display }
-  else
-    { model | display = "0"
-            , append = True
-    }
 
 
 appendDecimal : String -> String
@@ -163,38 +164,9 @@ appendDecimal str =
     str ++ "."
 
 
-enter : Model -> Model
-enter model =
-  if model.append then
-    { model | display = calculate model
-            , lastValue = parseFloat model.display
-            , append = False
-    }
-  else
-    { model | display = calculate model
-            , append = False
-    }
-
-
 calculate : Model -> String
 calculate model =
   model.function model.lastValue (parseFloat model.display) |> String.fromFloat
-
-
-changesign : Model -> Model
-changesign model =
-  let
-    num = parseFloat model.display
-  in
-    { model | display = String.fromFloat (-num) }
-
-
-percent : Model -> Model
-percent model =
-  let
-    num = (parseFloat model.display) / 100.0
-  in
-    { model | display = String.fromFloat num }
 
 
 -- VIEW
